@@ -65,9 +65,9 @@ namespace librealsense
                 return;
             }
 
-			if (Is<earth_frame>(frame.frame))
+			if (Is<earth_data>(frame.frame))
 			{
-				write_earth_frame(stream_id, timestamp, std::move(frame));
+				write_earth_data(stream_id, timestamp, std::move(frame));
 				return;
 			}
 
@@ -258,6 +258,58 @@ namespace librealsense
             q.w = f.w;
             return q;
         }
+
+		void write_earth_data(const stream_identifier& stream_id, const nanoseconds& timestamp, frame_holder&& frame)
+		{
+			auto pose = As<librealsense::earth_data>(frame.frame);
+			if (!frame)
+			{
+				throw io_exception("Null frame passed to write_motion_frame");
+			}
+			auto rotation = pose->get_rotation();
+
+			geometry_msgs::Transform transform;
+			geometry_msgs::Accel accel;
+			geometry_msgs::Twist twist;
+
+			transform.rotation = to_quaternion(pose->get_rotation());
+			transform.translation = to_vector3(pose->get_translation());
+			accel.angular = to_vector3(pose->get_angular_acceleration());
+			accel.linear = to_vector3(pose->get_acceleration());
+			twist.angular = to_vector3(pose->get_angular_velocity());
+			twist.linear = to_vector3(pose->get_velocity());
+
+			std::string transform_topic = ros_topic::pose_transform_topic(stream_id);
+			std::string accel_topic = ros_topic::pose_accel_topic(stream_id);
+			std::string twist_topic = ros_topic::pose_twist_topic(stream_id);
+
+			//Write the the pose frame as 3 seperate messages (each with different topic)
+			write_message(transform_topic, timestamp, transform);
+			write_message(accel_topic, timestamp, accel);
+			write_message(twist_topic, timestamp, twist);
+
+			// Write the pose confidence as metadata for the pose frame
+			std::string md_topic = ros_topic::frame_metadata_topic(stream_id);
+
+			diagnostic_msgs::KeyValue tracker_confidence_msg;
+			tracker_confidence_msg.key = TRACKER_CONFIDENCE_MD_STR;
+			tracker_confidence_msg.value = std::to_string(pose->get_tracker_confidence());
+			write_message(md_topic, timestamp, tracker_confidence_msg);
+
+			diagnostic_msgs::KeyValue mapper_confidence_msg;
+			mapper_confidence_msg.key = MAPPER_CONFIDENCE_MD_STR;
+			mapper_confidence_msg.value = std::to_string(pose->get_mapper_confidence());
+			write_message(md_topic, timestamp, mapper_confidence_msg);
+
+			//Write frame's timestamp as metadata
+			diagnostic_msgs::KeyValue frame_timestamp_msg;
+			frame_timestamp_msg.key = FRAME_TIMESTAMP_MD_STR;
+			frame_timestamp_msg.value = to_string() << std::hexfloat << pose->get_frame_timestamp();
+			write_message(md_topic, timestamp, frame_timestamp_msg);
+
+			// Write the rest of the frame metadata and stream extrinsics
+			write_additional_frame_messages(stream_id, timestamp, frame);
+		}
 
         void write_pose_frame(const stream_identifier& stream_id, const nanoseconds& timestamp, frame_holder&& frame)
         {

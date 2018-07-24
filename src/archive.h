@@ -415,12 +415,12 @@ namespace librealsense
         {}
     };
 
-	MAP_EXTENSION(RS2_EXTENSION_EARTH_DATA, librealsense::motion_frame);
+	MAP_EXTENSION(RS2_EXTENSION_MOTION_FRAME, librealsense::motion_frame);
 
 	//-------------------------------------------------------------
 	// Special data for EARTH ROVER data capturing
 
-	class earth_data : public frame
+	class earth_data_frame : public frame
 	{
 	public:
 		// pose frame data buffer is pose info struct
@@ -436,7 +436,7 @@ namespace librealsense
 			uint32_t mapper_confidence;    /**< pose data confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High                                     */
 		};
 
-		earth_frame() : frame() {}
+		earth_data_frame() : frame() {}
 
 		float3   get_translation()          const { return reinterpret_cast<const pose_info*>(data.data())->translation; }
 		float3   get_velocity()             const { return reinterpret_cast<const pose_info*>(data.data())->velocity; }
@@ -448,9 +448,8 @@ namespace librealsense
 		uint32_t get_mapper_confidence()    const { return reinterpret_cast<const pose_info*>(data.data())->mapper_confidence; }
 	};
 
-	MAP_EXTENSION(RS2_EXTENSION_EARTH_DATA, librealsense::earth_data);
+	MAP_EXTENSION(RS2_EXTENSION_EARTH_DATA_FRAME, librealsense::earth_data_frame);
 	//-------------------------------------------------------------
-
 
     class pose_frame : public frame
     {

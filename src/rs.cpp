@@ -1125,6 +1125,8 @@ int rs2_is_frame_extendable_to(const rs2_frame* f, rs2_extension extension_type,
     case RS2_EXTENSION_DISPARITY_FRAME : return VALIDATE_INTERFACE_NO_THROW((frame_interface*)f, librealsense::disparity_frame) != nullptr;
     case RS2_EXTENSION_MOTION_FRAME    : return VALIDATE_INTERFACE_NO_THROW((frame_interface*)f, librealsense::motion_frame)    != nullptr;
     case RS2_EXTENSION_POSE_FRAME      : return VALIDATE_INTERFACE_NO_THROW((frame_interface*)f, librealsense::pose_frame)      != nullptr;
+	case RS2_EXTENSION_EARTH_DATA_FRAME: return VALIDATE_INTERFACE_NO_THROW((frame_interface*)f, librealsense::earth_data_frame) != nullptr;
+
 
     default:
         return false;
@@ -1794,6 +1796,13 @@ float rs2_depth_stereo_frame_get_baseline(const rs2_frame* frame_ref, rs2_error*
     return df->get_stereo_baseline();
 }
 HANDLE_EXCEPTIONS_AND_RETURN(0, frame_ref)
+
+//-------------------- ER --------------------------------
+void rs2_earth_data_frame_get_earth_data(const rs2_frame* frame, rs2_earth_data* pose, rs2_error** error) BEGIN_API_CALL
+	// TODO Write interface
+}
+HANDLE_EXCEPTIONS_AND_RETURN(, frame, pose)
+//-------------------- ER --------------------------------
 
 void rs2_pose_frame_get_pose_data(const rs2_frame* frame, rs2_pose* pose, rs2_error** error) BEGIN_API_CALL
 {

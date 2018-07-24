@@ -627,6 +627,30 @@ namespace rs2
         }
     };
 
+	class earth_data_frame: public frame
+	{
+	public:
+		earth_data_frame(const frame& f)
+			: frame(f)
+		{
+			rs2_error* e = nullptr;
+			if (!f || (rs2_is_frame_extendable_to(f.get(), RS2_EXTENSION_EARTH_DATA_FRAME, &e) == 0 && !e))
+			{
+				reset();
+			}
+			error::handle(e);
+		}
+
+		rs2_earth_data get_earth_data()
+		{
+			rs2_earth_data earth_data;
+			rs2_error* e = nullptr;
+			rs2_earth_data_frame_get_earth_data(get(), &earth_data, &e);
+			error::handle(e);
+			return earth_data;
+		}
+	};
+
     class frameset : public frame
     {
     public:

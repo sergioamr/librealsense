@@ -40,9 +40,9 @@ typedef enum rs2_frame_metadata_value
     RS2_FRAME_METADATA_BACKEND_TIMESTAMP                    , /**< Timestamp get from uvc driver. usec*/
     RS2_FRAME_METADATA_ACTUAL_FPS                           , /**< Actual fps */
     RS2_FRAME_METADATA_FRAME_LASER_POWER                    , /**< Laser power value 0-360. */
-    RS2_FRAME_METADATA_FRAME_LASER_POWER_MODE               , /**< Laser power mode. Zero corresponds to Laser power switched off and one for switched on. */    
+    RS2_FRAME_METADATA_FRAME_LASER_POWER_MODE               , /**< Laser power mode. Zero corresponds to Laser power switched off and one for switched on. */
     RS2_FRAME_METADATA_EXPOSURE_PRIORITY                    , /**< Exposure priority. */
-    RS2_FRAME_METADATA_EXPOSURE_ROI_LEFT                    , /**< Left region of interest for the auto exposure Algorithm. */          
+    RS2_FRAME_METADATA_EXPOSURE_ROI_LEFT                    , /**< Left region of interest for the auto exposure Algorithm. */
     RS2_FRAME_METADATA_EXPOSURE_ROI_RIGHT                   , /**< Right region of interest for the auto exposure Algorithm. */
     RS2_FRAME_METADATA_EXPOSURE_ROI_TOP                     , /**< Top region of interest for the auto exposure Algorithm. */
     RS2_FRAME_METADATA_EXPOSURE_ROI_BOTTOM                  , /**< Bottom region of interest for the auto exposure Algorithm. */
@@ -86,6 +86,23 @@ typedef struct rs2_quaternion
 {
     float x, y, z, w;
 }rs2_quaternion;
+
+
+//------------- ER --------------------------------
+// Special data to capture
+
+typedef struct rs2_earth_data
+{
+	rs2_vector      translation;          /**< X, Y, Z values of translation, in meters (relative to initial position)                                    */
+	rs2_vector      velocity;             /**< X, Y, Z values of velocity, in meter/sec                                                                   */
+	rs2_vector      acceleration;         /**< X, Y, Z values of acceleration, in meter/sec^2                                                             */
+	rs2_quaternion  rotation;             /**< Qi, Qj, Qk, Qr components of rotation as represented in quaternion rotation (relative to initial position) */
+	rs2_vector      angular_velocity;     /**< X, Y, Z values of angular velocity, in radians/sec                                                         */
+	rs2_vector      angular_acceleration; /**< X, Y, Z values of angular acceleration, in radians/sec^2                                                   */
+	unsigned int    tracker_confidence;   /**< pose data confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High                                     */
+	unsigned int    mapper_confidence;    /**< pose data confidence 0x0 - Failed, 0x1 - Low, 0x2 - Medium, 0x3 - High                                     */
+} rs2_earth_data;
+//------------- ER --------------------------------
 
 typedef struct rs2_pose
 {
@@ -323,6 +340,14 @@ void rs2_synthetic_frame_ready(rs2_source* source, rs2_frame* frame, rs2_error**
 */
 void rs2_pose_frame_get_pose_data(const rs2_frame* frame, rs2_pose* pose, rs2_error** error);
 
+
+/**
+* Called to capture the extra metadata from the system
+* \param[in] frame       Pose frame
+* \param[out] pose       Pointer to a user allocated struct, which contains the pose info after a successful return
+* \param[out] error      If non-null, receives any error that occurs during this call, otherwise, errors are ignored
+*/
+void rs2_earth_data_frame_get_earth_data(const rs2_frame* frame, rs2_earth_data * pose, rs2_error** error);
 
 
 
