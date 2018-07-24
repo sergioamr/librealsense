@@ -45,8 +45,8 @@ namespace librealsense
         }
         return res;
     }
-    void frame::set_sensor(std::shared_ptr<sensor_interface> s) 
-    { 
+    void frame::set_sensor(std::shared_ptr<sensor_interface> s)
+    {
         sensor = s;
         if (s) _sensor_type = s->get_sensor_type();
     }

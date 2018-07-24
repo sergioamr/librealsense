@@ -13,21 +13,35 @@
 #include <iostream>
 #include <iomanip>
 
+#include <ctime>
+
+using namespace std;
 
 // Helper function for dispaying time conveniently
 std::string pretty_time(std::chrono::nanoseconds duration);
 // Helper function for rendering a seek bar
 void draw_seek_bar(rs2::playback& playback, int* seek_pos, float2& location, float width);
 
+char file_record[256];
+
+bool playback_ = false;
+
 int main(int argc, char * argv[]) try
 {
+	if (argc > 1) {
+		playback_ = true;
+		strcpy(file_record, argv[1]);
+	}
+
     // Create a simple OpenGL window for rendering:
-    window app(1280, 720, "RealSense Record and Playback Example");
+    window app(1280, 720, "Earth Rover capture playback");
     ImGui_ImplGlfw_Init(app, false);
 
     // Create booleans to control GUI (recorded - allow play button, recording - show 'recording to file' text)
     bool recorded = false;
     bool recording = false;
+
+	bool start = false;
 
     // Declare a texture for the depth image on the GPU
     texture depth_image;
@@ -84,15 +98,24 @@ int main(int argc, char * argv[]) try
             ImGui::SetCursorPos({ app.width() / 2 - 100, 3 * app.height() / 5 + 90});
             ImGui::Text("Click 'record' to start recording");
             ImGui::SetCursorPos({ app.width() / 2 - 100, 3 * app.height() / 5 + 110 });
-            if (ImGui::Button("record", { 50, 50 }))
+            if (ImGui::Button("record", { 50, 50 }) || start)
             {
-                // If it is the start of a new recording (device is not a recorder yet)
+				time_t now = time(0);
+				tm *gmtm = gmtime(&now);
+				sprintf(file_record, "capture_%02d%02d%02d.bag", 1 + gmtm->tm_hour, 1 + gmtm->tm_min, 1 + gmtm->tm_sec);
+
+				// If it is the start of a new recording (device is not a recorder yet)
                 if (!device.as<rs2::recorder>())
                 {
                     pipe->stop(); // Stop the pipeline with the default configuration
                     pipe = std::make_shared<rs2::pipeline>();
                     rs2::config cfg; // Declare a new configuration
-                    cfg.enable_record_to_file("a.bag");
+
+					cfg.enable_stream(RS2_STREAM_DEPTH, 640, 480, RS2_FORMAT_Z16, 6);
+					cfg.enable_stream(RS2_STREAM_INFRARED, 640, 480, RS2_FORMAT_Y8, 6);
+					cfg.enable_stream(RS2_STREAM_COLOR, 1280, 720, RS2_FORMAT_RGBA8, 6);
+
+                    cfg.enable_record_to_file(file_record);
                     pipe->start(cfg); //File will be opened at this point
                     device = pipe->get_active_profile().get_device();
                 }
@@ -100,8 +123,11 @@ int main(int argc, char * argv[]) try
                 { // If the recording is resumed after a pause, there's no need to reset the shared pointer
                     device.as<rs2::recorder>().resume(); // rs2::recorder allows access to 'resume' function
                 }
-                recording = true;
-            }
+
+				recording = true;
+				start = false;
+
+			}
 
             /*
             When pausing, device still holds the file.
@@ -111,7 +137,7 @@ int main(int argc, char * argv[]) try
                 if (recording)
                 {
                     ImGui::SetCursorPos({ app.width() / 2 - 100, 3 * app.height() / 5 + 60 });
-                    ImGui::TextColored({ 255 / 255.f, 64 / 255.f, 54 / 255.f, 1 }, "Recording to file 'a.bag'");
+                    ImGui::TextColored({ 255 / 255.f, 64 / 255.f, 54 / 255.f, 1 }, file_record);
                 }
 
                 // Pause the playback if button is clicked
@@ -135,6 +161,8 @@ int main(int argc, char * argv[]) try
             }
         }
 
+		recorded = true;
+
         // After a recording is done, we can play it
         if (recorded) {
             ImGui::SetCursorPos({ app.width() / 2 - 100, 4 * app.height() / 5 + 30 });
@@ -147,7 +175,7 @@ int main(int argc, char * argv[]) try
                     pipe->stop(); // Stop streaming with default configuration
                     pipe = std::make_shared<rs2::pipeline>();
                     rs2::config cfg;
-                    cfg.enable_device_from_file("a.bag");
+                    cfg.enable_device_from_file(file_record);
                     pipe->start(cfg); //File will be opened in read mode at this point
                     device = pipe->get_active_profile().get_device();
                 }
@@ -165,7 +193,8 @@ int main(int argc, char * argv[]) try
             if (pipe->poll_for_frames(&frames)) // Check if new frames are ready
             {
                 depth = color_map(frames.get_depth_frame()); // Find and colorize the depth data for rendering
-            }
+				depth = frames.get_infrared_frame();
+			}
 
             // Render a seek bar for the player
             float2 location = { app.width() / 4, 4 * app.height() / 5 + 110 };
