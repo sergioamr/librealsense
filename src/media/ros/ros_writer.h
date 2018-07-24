@@ -65,7 +65,7 @@ namespace librealsense
                 return;
             }
 
-			if (Is<earth_data>(frame.frame))
+			if (Is<earth_data_frame>(frame.frame))
 			{
 				write_earth_data(stream_id, timestamp, std::move(frame));
 				return;
@@ -261,7 +261,7 @@ namespace librealsense
 
 		void write_earth_data(const stream_identifier& stream_id, const nanoseconds& timestamp, frame_holder&& frame)
 		{
-			auto pose = As<librealsense::earth_data>(frame.frame);
+			auto pose = As<librealsense::earth_data_frame>(frame.frame);
 			if (!frame)
 			{
 				throw io_exception("Null frame passed to write_motion_frame");

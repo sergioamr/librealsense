@@ -1799,6 +1799,10 @@ HANDLE_EXCEPTIONS_AND_RETURN(0, frame_ref)
 
 //-------------------- ER --------------------------------
 void rs2_earth_data_frame_get_earth_data(const rs2_frame* frame, rs2_earth_data* pose, rs2_error** error) BEGIN_API_CALL
+{
+	VALIDATE_NOT_NULL(frame);
+	VALIDATE_NOT_NULL(pose);
+
 	// TODO Write interface
 }
 HANDLE_EXCEPTIONS_AND_RETURN(, frame, pose)
